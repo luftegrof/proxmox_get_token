@@ -13,13 +13,46 @@
 # Set to "true" to enable output of variables to the terminal.
 debug="false"
 
-# Parse the configuration file
-config_file="./pm_get_token.conf"
-source ${config_file}
+usage() {
+	echo -en "Usage:  \n\t\tsource ./pm_get_token.sh <proxmox_server> [<proxmox_port>]\n"
+	echo -en "\tE.g. \n\t\tsource ./pm_get_token.sh 192.0.2.1 8006\n\n"
+	if [[ "${0}" = "${BASH_SOURCE}" ]]; then
+		echo -en "\n\n!!!NOTICE!!!\n"
+		echo -en "You must source this script in order to properly set the required environment variables.\n"
+		echo -en "!!!NOTICE!!!\n\n"
+		exit 1
+	fi
+}
 
-echo -en "\n\n!!!NOTICE!!!\n"
-echo -en "You must source this script with 'source ./pm_get_token.sh' or '. ./pm_get_token.sh' in order to properly set your PM_API_* environment variables.\n"
-echo -en "!!!NOTICE!!!\n\n"
+# Ensure that this script is being sourced, not just executed.
+if [[ "${0}" = "${BASH_SOURCE}" ]]; then
+	usage
+	return 1
+fi
+
+server_re='^[0-9A-Za-z\.\-]+$'
+address_re='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+number_re='^[0-9]+$'
+if [ -n "${1}" ]; then
+	if [[ "${1}" =~ ${server_re} ]] || [[ "${1}" =~ ${address_re} ]]; then
+		proxmox_server="${1}"
+	else
+		echo -en "Server must be a valid name or IPv4 address.\n"
+		usage
+		return 1
+	fi
+else
+	echo -en "Server must be a valid name or IPv4 address.\n"
+	usage
+	return 1
+fi
+if [[ -z ${2} ]] || ( [[ "${2}" =~ ${number_re} ]] && [[ ${2} -ge 1 ]] && [[ ${2} -le 65535 ]] ); then
+	proxmox_port="${2:-8006}"
+else
+	echo -en "Port must be a number between 1 and 65535.\n"
+	usage
+	return 1
+fi
 
 # Get a random ID to use as the token ID...
 # The token ID must start with a letter.
@@ -132,8 +165,12 @@ fi
 if [ -n "${token_id}" ] && [ "${token_id}" != "null" ]; then
 	echo -en "Setting PM_API_TOKEN_ID environment variable...\n"
 	export PM_API_TOKEN_ID="${token_id}"
+	echo -en "Setting TF_VAR_PM_API_TOKEN_ID environment variable...\n"
+	export TF_VAR_PM_API_TOKEN_ID="${token_id}"
 	echo -en "Setting PM_API_TOKEN_SECRET environment variable...\n"
 	export PM_API_TOKEN_SECRET="${secret}"
+	echo -en "Setting TF_VAR_PM_API_TOKEN_SECRET environment variable...\n"
+	export TF_VAR_PM_API_TOKEN_SECRET="${secret}"
 else
 	echo -en "An error may have occurred.\n"
 	echo -en "Server Response: ${apitoken}\n"
