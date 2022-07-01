@@ -26,6 +26,7 @@ source ~/.bashrc
 Adding the `pm_get_token` alias to your `~/.bashrc` is optional, but it will allow you to simply run `pm_get_token 192.0.2.41` from any path.  This may be useful, for example, to run `pm_get_token` from deep within your terraform directory structure.
 
 ## Defaults
+* API Port: If you do not specify a port, it will default to 8006.
 * Timeout: 900 seconds (15 minutes).  You will be prompted to specify the timeout value or accept the default.
 * The new token will be granted the same permissions as the provided user account.
 * It is technically possible to create tokens that have a reduced set of privileges, but this version of `pm_get_token` is not capable of that at this time.
