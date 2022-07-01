@@ -41,7 +41,7 @@ After obtaining a new API token from Proxmox, environment variables are set to h
 | TF_VAR_PM_API_URL | API URL | Terraform Variables from Environment Variables for use by Terraform Provisioners |
 | TF_VAR_PM_TOKEN_ID | API Token ID | Terraform Variables from Environment Variables for use by Terraform Provisioners |
 | TF_VAR_PM_TOKEN_SECRET | API Token Secret | Terraform Variables from Environment Variables for use by Terraform Provisioners |
-| PROXMOX_URL | API URL | Various Proxmox modules for Ansible |
+| PROXMOX_URL | API URL | Various modules for Ansible |
 | PROXMOX_USER | API Token ID | Various Ansible Modules |
 | PROXMOX_USERNAME | API Token ID | Various Ansible Modules |
 | PROXMOX_TOKEN_ID | API Token ID | Various Ansible Modules |
