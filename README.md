@@ -5,6 +5,8 @@ This script will create a new Proxmox User API Token for use with automation too
 
 A randomly generated UUID is specified as the Token ID.  Proxmox issues a randomly generated UUID as the token secret.
 
+It will also automatically delete any expired tokens for the specified user at the time `pm_get_token` is executed.  The final output will list all expired tokens that were deleted as well as any currently valid tokens.
+
 ##### Example Proxmox API Token ID and Token Secret pair:
 ```
 Token ID: username@pve!a04c6fbc-7e0b-458c-864e-e2fb0d76a450
