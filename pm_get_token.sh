@@ -136,9 +136,9 @@ if [ ${success} == 1 ]; then
 	proxmox_username=$(echo ${init} | jq -r '.data.username')
 	if [ ${debug} -eq 1 ]; then
 		echo -en "proxmox_csrf_token=${proxmox_csrf_token}\n"
-		echo -en "proxmox_csrf_token_enc=${proxmox_csrf_token}\n"
+		echo -en "proxmox_csrf_token_enc=${proxmox_csrf_token_enc}\n"
 		echo -en "proxmox_authn_cookie=${proxmox_authn_cookie}\n"
-		echo -en "proxmox_authn_cookie_enc=${proxmox_authn_cookie}\n"
+		echo -en "proxmox_authn_cookie_enc=${proxmox_authn_cookie_enc}\n"
 		echo -en "proxmox_username=${proxmox_username}\n"
 	fi
 else
