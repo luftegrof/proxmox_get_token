@@ -126,14 +126,14 @@ if [ ${debug} -eq 1 ]; then
 	echo -en "Authentication Result: ${init}\n"
 fi
 
-success=$(echo ${init} | jq -r '.success')
+success=$(jq -r '.success' <<<${init})
 
 if [ ${success} == 1 ]; then
-	proxmox_csrf_token=$(echo ${init} | jq -r '.data.CSRFPreventionToken')
+	proxmox_csrf_token=$(jq -r '.data.CSRFPreventionToken' <<<${init})
 	proxmox_csrf_token_enc=$(jq -j -R -r @uri <<<${proxmox_csrf_token})
-	proxmox_authn_cookie=$(echo ${init} | jq -r '.data.ticket')
+	proxmox_authn_cookie=$(jq -r '.data.ticket' <<<${init})
 	proxmox_authn_cookie_enc=$(jq -j -R -r @uri <<<${proxmox_authn_cookie})
-	proxmox_username=$(echo ${init} | jq -r '.data.username')
+	proxmox_username=$(jq -r '.data.username' <<<${init})
 	if [ ${debug} -eq 1 ]; then
 		echo -en "proxmox_csrf_token=${proxmox_csrf_token}\n"
 		echo -en "proxmox_csrf_token_enc=${proxmox_csrf_token_enc}\n"
@@ -157,8 +157,8 @@ apitoken=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/users
   --insecure \
   --silent)
 
-token_id=$(echo ${apitoken} | jq -r ".data.\"full-tokenid\"")
-secret=$(echo ${apitoken} | jq -r '.data.value')
+token_id=$(jq -r ".data.\"full-tokenid\"" <<<${apitoken})
+secret=$(jq -r '.data.value' <<<${apitoken})
 
 if [ ${debug} -eq 1 ]; then
 	echo -en "Server Response: ${apitoken}\n"
@@ -196,4 +196,33 @@ else
 	echo -en "An error may have occurred.\n"
 	echo -en "Server Response: ${apitoken}\n"
 	return 1
+fi
+
+# While we're at it, let's clean up any expired tokens...
+token_list=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/users/${proxmox_username}/token \
+	-X 'GET' \
+	-H "Authorization: PVEAPIToken=${token_id}=${secret}" \
+	--insecure \
+	--silent)
+expired_tokens=$(jq -r '.data[] | select(.expire < now)' <<<"${token_list}")
+current_tokens=$(jq -r '.data[] | select(.expire > now)' <<<"${token_list}")
+for expired_token in $(jq -r '.tokenid' <<<"${expired_tokens}"); do
+	result=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/users/${proxmox_username}/token/${expired_token} \
+	-X 'DELETE' \
+	-H "Authorization: PVEAPIToken=${token_id}=${secret}" \
+	--insecure \
+	--silent)
+	if [ "${result}" != '{"data":null}' ]; then
+		echo -en "An error may have occurred.\n"
+		echo -en "Server Response: ${result}\n"
+		return 1
+	fi
+done
+if [ -n "${expired_tokens}" ]; then
+	printf "\n\nExpired Tokens Deleted for %s on %s:\n\n" "${proxmox_username}" "${proxmox_server}"
+	printf "Token ID: %s\tExpired: %s\n" $(jq -r '. | .tokenid, (.expire|todate)' <<<"${expired_tokens}")
+fi
+if [ -n "${current_tokens}" ]; then
+	 printf "\n\nUnexpired Tokens for %s on %s:\n\n" "${proxmox_username}" "${proxmox_server}"
+	 printf "Token ID: %s\tExpires: %s\n" $(jq -r '. | .tokenid, (.expire|todate)' <<<"${current_tokens}")
 fi
