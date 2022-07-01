@@ -77,7 +77,7 @@ read username
 if [ -n ${username} ]; then
 	echo -n "Proxmox Password: "
 	read -s password
-	password_enc=$(php -r "echo urlencode(\"${password}\");")
+	password_enc=$(jq -j -R -r @uri <<<${password})
 	echo
 	if [ -n "${password}" ]; then
 		echo -n "Proxmox Realm (pve|pam) [pve]: "
@@ -130,9 +130,9 @@ success=$(echo ${init} | jq -r '.success')
 
 if [ ${success} == 1 ]; then
 	proxmox_csrf_token=$(echo ${init} | jq -r '.data.CSRFPreventionToken')
-	proxmox_csrf_token_enc=$(php -r "echo urlencode(\"${proxmox_csrf_token}\");")
+	proxmox_csrf_token_enc=$(jq -j -R -r @uri <<<${proxmox_csrf_token})
 	proxmox_authn_cookie=$(echo ${init} | jq -r '.data.ticket')
-	proxmox_authn_cookie_enc=$(php -r "echo urlencode(\"${proxmox_authn_cookie}\");")
+	proxmox_authn_cookie_enc=$(jq -j -R -r @uri <<<${proxmox_authn_cookie})
 	proxmox_username=$(echo ${init} | jq -r '.data.username')
 	if [ ${debug} -eq 1 ]; then
 		echo -en "proxmox_csrf_token=${proxmox_csrf_token}\n"
