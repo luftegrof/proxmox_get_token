@@ -24,7 +24,7 @@ This may be useful for example, to run `pm_get_token` from deep within your terr
 * It is technically possible to create tokens that have a reduced set of privileges, but this version of `pm_get_token` is not capable of that at this time.
 
 ## Environment Variables
-After obtaining a new API token from Proxmox, environment variables that Proxmox provisioners, providers, and modules of Terraform, Packer, and Ansible will use, by default, to determine your Proxmox API URL, Token ID, and Token Secret.
+After obtaining a new API token from Proxmox, environment variables are set that Proxmox provisioners, providers, and modules of Terraform, Packer, and Ansible will use, by default, to determine your Proxmox API URL, Token ID, and Token Secret.
 
 | Variable Name | Contents | Used By |
 | --- | --- | --- |
