@@ -14,12 +14,12 @@
 debug=0
 
 usage() {
-	echo -en "Usage:  \n\t\tsource ./pm_get_token.sh <proxmox_server> [<proxmox_port>]\n"
-	echo -en "\tE.g. \n\t\tsource ./pm_get_token.sh 192.0.2.1 8006\n\n"
+	printf "Usage:  \n\t\tsource ./pm_get_token.sh <proxmox_server> [<proxmox_port>]\n"
+	printf "\tE.g. \n\t\tsource ./pm_get_token.sh 192.0.2.1 8006\n\n"
 	if [[ "${0}" = "${BASH_SOURCE}" ]]; then
-		echo -en "\n\n!!!NOTICE!!!\n"
-		echo -en "You must source this script in order to properly set the required environment variables.\n"
-		echo -en "!!!NOTICE!!!\n\n"
+		printf "\n\n!!!NOTICE!!!\n"
+		printf "You must source this script in order to properly set the required environment variables.\n"
+		printf "!!!NOTICE!!!\n\n"
 		exit 1
 	fi
 }
@@ -42,19 +42,19 @@ if [ -n "${1}" ]; then
 	if [[ "${1}" =~ ${server_re} ]] || [[ "${1}" =~ ${address_re} ]]; then
 		proxmox_server="${1}"
 	else
-		echo -en "Server must be a valid name or IPv4 address.\n"
+		printf "Server must be a valid name or IPv4 address.\n"
 		usage
 		return 1
 	fi
 else
-	echo -en "Server must be a valid name or IPv4 address.\n"
+	printf "Server must be a valid name or IPv4 address.\n"
 	usage
 	return 1
 fi
 if [[ -z ${2} ]] || ( [[ "${2}" =~ ${number_re} ]] && [[ ${2} -ge 1 ]] && [[ ${2} -le 65535 ]] ); then
 	proxmox_port="${2:-8006}"
 else
-	echo -en "Port must be a number between 1 and 65535.\n"
+	printf "Port must be a number between 1 and 65535.\n"
 	usage
 	return 1
 fi
@@ -66,50 +66,50 @@ random_id=""
 until [[ "${random_id}" =~ ${tokenid_re} ]]; do
 	random_id=$(cat /proc/sys/kernel/random/uuid)
 	if [ ${debug} -eq 1 ]; then
-		echo -en "Random ID: ${random_id}\n"
+		printf "Random ID: ${random_id}\n"
 	fi
 done
 
 # Prompt for the username, password, and realm.
 # Perform very basic input validation.
-echo -n "Proxmox Username: "
+printf "Proxmox Username: "
 read username
 if [ -n ${username} ]; then
-	echo -n "Proxmox Password: "
+	printf "Proxmox Password: "
 	read -s password
 	password_enc=$(jq -j -R -r @uri <<<${password})
-	echo
+	printf "\n"
 	if [ -n "${password}" ]; then
-		echo -n "Proxmox Realm (pve|pam) [pve]: "
+		printf "Proxmox Realm (pve|pam) [pve]: "
 		read realm
 		realm=${realm:-pve}
 		case "${realm}" in
 			pve|pam)
 			;;
 			*)
-				echo -en "Realm must be 'pve' or 'pam'.\n"
+				printf "Realm must be 'pve' or 'pam'.\n"
 				return 1
 			;;
 		esac
 		if [ -n "${realm}" ]; then
-			echo -n "Token Expiration (in seconds) [900]: "
+			printf "Token Expiration (in seconds) [900]: "
 			read seconds
 			seconds=${seconds:-900}
 			re='^[0-9]+$'
 			if [[ ${seconds} =~ ${re} ]]; then
 				expire=$(date -d "+${seconds} seconds" +%s)
-				echo -en "Token Expiration: $(date -d @${expire})\n"
+				printf "Token Expiration: $(date -d @${expire})\n"
 			else
-				echo -en "Expiration must be a number of seconds.\n"
+				printf "Expiration must be a number of seconds.\n"
 				return 1
 			fi
 		fi
 	else
-		echo -en "Password may not be blank.\n"
+		printf "Password may not be blank.\n"
 		return 1
 	fi
 else
-	echo -en "Username may not be blank.\n"
+	printf "Username may not be blank.\n"
 	return 1
 fi
 
@@ -123,7 +123,7 @@ init=$(curl "https://${proxmox_server}:${proxmox_port}/api2/extjs/access/ticket"
   --insecure)
 
 if [ ${debug} -eq 1 ]; then
-	echo -en "Authentication Result: ${init}\n"
+	printf "Authentication Result: ${init}\n"
 fi
 
 success=$(jq -r '.success' <<<${init})
@@ -135,15 +135,15 @@ if [ ${success} == 1 ]; then
 	proxmox_authn_cookie_enc=$(jq -j -R -r @uri <<<${proxmox_authn_cookie})
 	proxmox_username=$(jq -r '.data.username' <<<${init})
 	if [ ${debug} -eq 1 ]; then
-		echo -en "proxmox_csrf_token=${proxmox_csrf_token}\n"
-		echo -en "proxmox_csrf_token_enc=${proxmox_csrf_token_enc}\n"
-		echo -en "proxmox_authn_cookie=${proxmox_authn_cookie}\n"
-		echo -en "proxmox_authn_cookie_enc=${proxmox_authn_cookie_enc}\n"
-		echo -en "proxmox_username=${proxmox_username}\n"
+		printf "proxmox_csrf_token=${proxmox_csrf_token}\n"
+		printf "proxmox_csrf_token_enc=${proxmox_csrf_token_enc}\n"
+		printf "proxmox_authn_cookie=${proxmox_authn_cookie}\n"
+		printf "proxmox_authn_cookie_enc=${proxmox_authn_cookie_enc}\n"
+		printf "proxmox_username=${proxmox_username}\n"
 	fi
 else
-	echo -en "Proxmox API initialization was not successful.\n"
-	echo -en "  Double-check your username, password, and realm.\n"
+	printf "Proxmox API initialization was not successful.\n"
+	printf "  Double-check your username, password, and realm.\n"
 	return 1
 fi
 
@@ -161,9 +161,9 @@ token_id=$(jq -r ".data.\"full-tokenid\"" <<<${apitoken})
 secret=$(jq -r '.data.value' <<<${apitoken})
 
 if [ ${debug} -eq 1 ]; then
-	echo -en "Server Response: ${apitoken}\n"
-	echo -en "API Token ID: ${token_id}\n"
-	echo -en "API Token Secret: ${secret}\n"
+	printf "Server Response: ${apitoken}\n"
+	printf "API Token ID: ${token_id}\n"
+	printf "API Token Secret: ${secret}\n"
 fi
 
 # Set up environment variables for terraform, packer, and other automation tools...
@@ -173,7 +173,7 @@ if [ -n "${token_id}" ] && [ "${token_id}" != "null" ]; then
 		if  [ ${debug} -eq 1 ]; then
 			printf "%s=%s\n" ${api_url_env_var} $(printenv ${api_url_env_var})
 		else
-			echo -en "Setting ${api_url_env_var} environment variable...\n"
+			printf "Setting ${api_url_env_var} environment variable...\n"
 		fi
 	done
 	for token_id_env_var in ${token_id_env_vars}; do
@@ -181,7 +181,7 @@ if [ -n "${token_id}" ] && [ "${token_id}" != "null" ]; then
 		if  [ ${debug} -eq 1 ]; then
 			printf "%s=%s\n" ${token_id_env_var} $(printenv ${token_id_env_var})
 		else
-			echo -en "Setting ${token_id_env_var} environment variable...\n"
+			printf "Setting ${token_id_env_var} environment variable...\n"
 		fi
 	done
 	for token_secret_env_var in ${token_secret_env_vars}; do
@@ -189,12 +189,12 @@ if [ -n "${token_id}" ] && [ "${token_id}" != "null" ]; then
 		if  [ ${debug} -eq 1 ]; then
 			printf "%s=%s\n" ${token_secret_env_var} $(printenv ${token_secret_env_var})
 		else
-			echo -en "Setting ${token_secret_env_var} environment variable...\n"
+			printf "Setting ${token_secret_env_var} environment variable...\n"
 		fi
 	done
 else
-	echo -en "An error may have occurred.\n"
-	echo -en "Server Response: ${apitoken}\n"
+	printf "An error may have occurred.\n"
+	printf "Server Response: ${apitoken}\n"
 	return 1
 fi
 
@@ -213,8 +213,8 @@ for expired_token in $(jq -r '.tokenid' <<<"${expired_tokens}"); do
 	--insecure \
 	--silent)
 	if [ "${result}" != '{"data":null}' ]; then
-		echo -en "An error may have occurred.\n"
-		echo -en "Server Response: ${result}\n"
+		printf "An error may have occurred.\n"
+		printf "Server Response: ${result}\n"
 		return 1
 	fi
 done
