@@ -12,7 +12,7 @@ Token Secret: 7439120c-2e2a-417b-a159-871361aca3fb
 ```
 
 ## Setup
-Adding the following alias to your `~/.bashrc` will allow you to run (source) `pm_get_token 192.0.2.41` from any path.
+Adding the following alias to your `~/.bashrc` will allow you to simply run `pm_get_token 192.0.2.41` from any path.
 
 `alias pm_get_token="source $HOME/git/luftegrof/proxmox_get_token/pm_get_token.sh"`
 
