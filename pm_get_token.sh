@@ -11,7 +11,7 @@
 # By default, it will set the token to expire in 15 minutes.
 
 # Set to "true" to enable output of variables to the terminal.
-debug="false"
+debug=0
 
 usage() {
 	echo -en "Usage:  \n\t\tsource ./pm_get_token.sh <proxmox_server> [<proxmox_port>]\n"
@@ -29,6 +29,11 @@ if [[ "${0}" = "${BASH_SOURCE}" ]]; then
 	usage
 	return 1
 fi
+
+# Environment Variables to Output:
+api_url_env_vars="PM_API_URL TF_VAR_PM_API_URL PROXMOX_URL"
+token_id_env_vars="PM_API_TOKEN_ID TF_VAR_PM_API_TOKEN_ID PROXMOX_USERNAME PROXMOX_USER PROXMOX_TOKEN_ID"
+token_secret_env_vars="PM_API_TOKEN_SECRET TF_VAR_PM_API_TOKEN_SECRET PROXMOX_TOKEN_SECRET PROXMOX_TOKEN"
 
 server_re='^[0-9A-Za-z\.\-]+$'
 address_re='^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
@@ -60,7 +65,7 @@ tokenid_re='^[A-Za-z][A-Za-z0-9\.\-_]+'
 random_id=""
 until [[ "${random_id}" =~ ${tokenid_re} ]]; do
 	random_id=$(cat /proc/sys/kernel/random/uuid)
-	if [ "${debug}" == "true" ]; then
+	if [ ${debug} -eq 1 ]; then
 		echo -en "Random ID: ${random_id}\n"
 	fi
 done
@@ -117,7 +122,7 @@ init=$(curl "https://${proxmox_server}:${proxmox_port}/api2/extjs/access/ticket"
   --silent \
   --insecure)
 
-if [ "${debug}" == "true" ]; then
+if [ ${debug} -eq 1 ]; then
 	echo -en "Authentication Result: ${init}\n"
 fi
 
@@ -129,7 +134,7 @@ if [ ${success} == 1 ]; then
 	proxmox_authn_cookie=$(echo ${init} | jq -r '.data.ticket')
 	proxmox_authn_cookie_enc=$(php -r "echo urlencode(\"${proxmox_authn_cookie}\");")
 	proxmox_username=$(echo ${init} | jq -r '.data.username')
-	if [ "${debug}" == "true" ]; then
+	if [ ${debug} -eq 1 ]; then
 		echo -en "proxmox_csrf_token=${proxmox_csrf_token}\n"
 		echo -en "proxmox_csrf_token_enc=${proxmox_csrf_token}\n"
 		echo -en "proxmox_authn_cookie=${proxmox_authn_cookie}\n"
@@ -155,7 +160,7 @@ apitoken=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/users
 token_id=$(echo ${apitoken} | jq -r ".data.\"full-tokenid\"")
 secret=$(echo ${apitoken} | jq -r '.data.value')
 
-if [ "${debug}" == "true" ]; then
+if [ ${debug} -eq 1 ]; then
 	echo -en "Server Response: ${apitoken}\n"
 	echo -en "API Token ID: ${token_id}\n"
 	echo -en "API Token Secret: ${secret}\n"
@@ -163,23 +168,30 @@ fi
 
 # Set up environment variables for terraform, packer, and other automation tools...
 if [ -n "${token_id}" ] && [ "${token_id}" != "null" ]; then
-	echo -en "Setting PM_API_TOKEN_ID environment variable...\n"
-	export PM_API_TOKEN_ID="${token_id}"
-	echo -en "Setting TF_VAR_PM_API_TOKEN_ID environment variable...\n"
-	export TF_VAR_PM_API_TOKEN_ID="${token_id}"
-	echo -en "Setting PM_API_TOKEN_SECRET environment variable...\n"
-	export PM_API_TOKEN_SECRET="${secret}"
-	echo -en "Setting TF_VAR_PM_API_TOKEN_SECRET environment variable...\n"
-	export TF_VAR_PM_API_TOKEN_SECRET="${secret}"
-	echo -en "Setting PROXMOX_URL for Packer Proxmox-ISO...\n"
-	export PROXMOX_URL="https://${proxmox_server}:${proxmox_port}/api2/json"
-	echo -en "Setting PM_API_URL for Terraform Proxmox...\n"
-	export PM_API_URL="${PROXMOX_URL}"
-	export TF_VAR_PM_API_URL="${PROXMOX_URL}"
-	echo -en "Setting PROXMOX_USERNAME for Packer Proxmox-ISO...\n"
-	export PROXMOX_USERNAME="${PM_API_TOKEN_ID}"
-	echo -en "Setting PROXMOX_TOKEN for Packer Proxmox-ISO...\n"
-	export PROXMOX_TOKEN="${PM_API_TOKEN_SECRET}"
+	for api_url_env_var in ${api_url_env_vars}; do
+		export ${api_url_env_var}="https://${proxmox_server}:${proxmox_port}/api2/json"
+		if  [ ${debug} -eq 1 ]; then
+			printf "%s=%s\n" ${api_url_env_var} $(printenv ${api_url_env_var})
+		else
+			echo -en "Setting ${api_url_env_var} environment variable...\n"
+		fi
+	done
+	for token_id_env_var in ${token_id_env_vars}; do
+		export ${token_id_env_var}="${token_id}"
+		if  [ ${debug} -eq 1 ]; then
+			printf "%s=%s\n" ${token_id_env_var} $(printenv ${token_id_env_var})
+		else
+			echo -en "Setting ${token_id_env_var} environment variable...\n"
+		fi
+	done
+	for token_secret_env_var in ${token_secret_env_vars}; do
+		export ${token_secret_env_var}="${secret}"
+		if  [ ${debug} -eq 1 ]; then
+			printf "%s=%s\n" ${token_secret_env_var} $(printenv ${token_secret_env_var})
+		else
+			echo -en "Setting ${token_secret_env_var} environment variable...\n"
+		fi
+	done
 else
 	echo -en "An error may have occurred.\n"
 	echo -en "Server Response: ${apitoken}\n"
