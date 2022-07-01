@@ -16,6 +16,7 @@ Token Secret: 7439120c-2e2a-417b-a159-871361aca3fb
 * `bash`
 * `curl`
 * `jq`
+* `php`
 
 ### Installation 
 ```
