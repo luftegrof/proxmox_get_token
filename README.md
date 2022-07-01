@@ -20,7 +20,7 @@ Token Secret: 7439120c-2e2a-417b-a159-871361aca3fb
 ### Installation 
 ```
 mkdir -p $HOME/git/luftegrof
-git clone git@github.com:luftegrof/proxmox_get_token.git $HOME/git/luftegrof
+git clone git@github.com:luftegrof/proxmox_get_token.git $HOME/git/luftegrof/proxmox_get_token
 echo "alias pm_get_token='source $HOME/git/luftegrof/proxmox_get_token/pm_get_token.sh'" >> $HOME/.bashrc
 ```
 Adding the `pm_get_token` alias to your `~/.bashrc` is optional, but it will allow you to simply run `pm_get_token 192.0.2.41` from any path.  This may be useful, for example, to run `pm_get_token` from deep within your terraform directory structure.
