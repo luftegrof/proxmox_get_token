@@ -204,7 +204,7 @@ token_list=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/use
 	-H "Authorization: PVEAPIToken=${token_id}=${secret}" \
 	--insecure \
 	--silent)
-expired_tokens=$(jq -r '.data[] | select(.expire < now)' <<<"${token_list}")
+expired_tokens=$(jq -r '.data[] | select(.expire <= now)' <<<"${token_list}")
 current_tokens=$(jq -r '.data[] | select(.expire > now)' <<<"${token_list}")
 for expired_token in $(jq -r '.tokenid' <<<"${expired_tokens}"); do
 	result=$(curl https://${proxmox_server}:${proxmox_port}/api2/json/access/users/${proxmox_username}/token/${expired_token} \
